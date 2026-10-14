@@ -35,7 +35,12 @@ export const notFoundHandler: RequestHandler = (req, _res, next) => {
   next(new AppError('NOT_FOUND', `No route for ${req.method} ${req.originalUrl}`));
 };
 
-export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+export const errorHandler: ErrorRequestHandler = (err, _req, res, next) => {
+  if (res.headersSent) {
+    // Too late for an error body; Express's default handler closes the connection.
+    next(err);
+    return;
+  }
   const appError = toAppError(err);
   if (appError.status >= 500) {
     console.error(err);

@@ -1,5 +1,5 @@
 import { API_ERROR_CODES } from '@fired-up-pizza/shared';
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppError, STATUS_BY_CODE, errorHandler } from './errors';
@@ -50,6 +50,18 @@ describe('errorHandler', () => {
     const res = await request(appThatThrows(new AppError('NOT_FOUND', 'Missing'))).get('/boom');
 
     expect(res.body).toEqual({ error: { code: 'NOT_FOUND', message: 'Missing' } });
+  });
+
+  it('hands off to Express when the response has already started', () => {
+    const error = new AppError('NOT_FOUND', 'Missing');
+    const res = { headersSent: true, status: vi.fn(), json: vi.fn() };
+    const next = vi.fn();
+
+    errorHandler(error, {} as Request, res as unknown as Response, next);
+
+    expect(next).toHaveBeenCalledWith(error);
+    expect(res.status).not.toHaveBeenCalled();
+    expect(res.json).not.toHaveBeenCalled();
   });
 
   it('hides unexpected errors behind a generic 500', async () => {
