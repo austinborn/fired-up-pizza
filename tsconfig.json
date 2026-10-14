@@ -1,0 +1,8 @@
+{
+  "//": "Type-checks the tooling config files. Each workspace has its own tsconfig.json for src/.",
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["*.ts", "shared/*.config.ts", "server/*.config.ts", "client/*.config.ts"]
+}

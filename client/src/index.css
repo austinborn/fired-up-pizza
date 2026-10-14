@@ -1,0 +1,2 @@
+/* The only stylesheet: Tailwind's entry point (ADR 0007). Style with utility classes. */
+@import 'tailwindcss';

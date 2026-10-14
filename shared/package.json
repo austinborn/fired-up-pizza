@@ -1,0 +1,14 @@
+{
+  "name": "@fired-up-pizza/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Domain types and pure domain rules shared by the client and server.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  }
+}

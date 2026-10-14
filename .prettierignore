@@ -1,0 +1,18 @@
+package-lock.json
+**/dist/
+**/coverage/
+server/data/
+
+# Product inputs kept verbatim as written
+docs/PROJECT_OVERVIEW.md
+docs/PROJECT_MANIFEST.md
+docs/SOFTWARE_FACTORY_MANIFEST.md
+
+# Gas City / agent runtime state that can appear in a checkout
+.beads/
+.claude/
+.gc/
+worktrees/
+FACTORY_LOG.md
+docs/.agents/
+docs/skills-lock.json

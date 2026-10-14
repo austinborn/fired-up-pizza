@@ -8,3 +8,22 @@
 # Gas City
 .beads/*
 !.beads/identity.toml
+# Agent runtime state created inside polecat worktrees
+.gc/
+worktrees/
+
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Local SQLite database, created on first `npm run dev`
+server/data/
+
+# Environment and editor/OS files
+.env
+.env.*
+!.env.example
+.DS_Store
+npm-debug.log*
