@@ -78,7 +78,7 @@ State key:
 | `src/components/Layout.tsx`, `src/components/StaffLayout.tsx`                       | Customer and staff shells                          | Done        | `fup-be5`; cart count: `fup-oe9.3`    |
 | `src/components/PlaceholderPage.tsx`                                                | Temporary page body; delete when unused            | Done        | `fup-be5`; removal: `fup-e6u.2`       |
 | `src/test/setup.ts`, `src/test/render.tsx`                                          | jest-dom setup, `renderWithProviders`, `renderApp` | Done        | `fup-be5`                             |
-| `src/api/http.ts`, `src/hooks/`, view-state components, `src/lib/`                  | HTTP client, `useAsync`, `usePolling`, formatting  | Planned     | `fup-qt5.5`                           |
+| `src/api/http.ts`, `src/hooks/`, view-state components, `src/lib/`                  | HTTP client, `useAsync`, `usePolling`, formatting  | Done        | `fup-qt5.5`                           |
 | `src/pages/customer/MenuPage.tsx`, `src/api/catalog.ts`                             | Menu                                               | Placeholder | `fup-oe9.2`                           |
 | `src/context/CartContext.tsx`                                                       | Cart state with persistence                        | Planned     | `fup-oe9.3`                           |
 | `src/pages/customer/PizzaBuilderPage.tsx`                                           | Pizza builder                                      | Placeholder | `fup-oe9.4`                           |
