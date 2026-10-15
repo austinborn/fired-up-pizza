@@ -53,7 +53,7 @@ npm run build      # typecheck + client production build
 ## Testing notes
 
 - Tests are co-located as `*.test.ts(x)`. Vitest globals are off, so import `describe`/`it`/`expect` from `vitest`.
-- Server: `request(createApp({ db }))` with supertest against an in-memory database. Never use the real database file.
+- Server: `request(createApp({ db }))` with supertest against an in-memory database. Never use the real database file. Only behavior that a file database alone has, such as WAL or migrating an empty file, gets a throwaway temp file (ADR 0002 rule 2).
 - Client: Testing Library with a mocked `fetch`. Render through `renderWithProviders` / `renderApp` from `client/src/test/render.tsx` so providers match `main.tsx`.
 - ESLint is type-aware: no floating promises, and no unsafe `any` in production code. Test files relax the `no-unsafe-*` rules for untyped JSON.
 - `eslint-plugin-react-hooks` v7 flags synchronous `setState` inside effects. Derive state, or set it from async callbacks.

@@ -10,7 +10,7 @@ The restaurant runs the app on one machine with no database server (manifest Con
 ## Decision
 
 1. SQLite through `better-sqlite3` (synchronous API) is the only datastore. Each process has one connection, opened by `openDatabase()` in `server/src/db/connection.ts`. Foreign keys are always on; file databases use WAL journaling.
-2. The database file defaults to `server/data/fired-up-pizza.sqlite`; `DATABASE_PATH` overrides it. Its directory is created automatically and is gitignored. Tests use `:memory:`.
+2. The database file defaults to `server/data/fired-up-pizza.sqlite`; `DATABASE_PATH` overrides it. Its directory is created automatically and is gitignored. Tests use `:memory:`. The one exception is a test of behavior that only a file database has, such as WAL journaling or migrating an empty file. Such a test opens a new file in a fresh temporary directory (`fs.mkdtempSync` under `os.tmpdir()`) and deletes the directory afterwards. No test opens the real database file.
 3. Migrations:
    - The schema changes only through numbered SQL migrations in `server/src/db/migrations/NNNN_description.sql`, loaded relative to the module (`import.meta.url`).
    - They are applied at startup in filename order, each in its own transaction, and recorded in `schema_migrations(version, applied_at)`.

@@ -33,7 +33,7 @@ The manifest fixes the stack (React 18 + TypeScript + Vite, Tailwind, React Rout
    - `lib/`: pure helpers.
    - `test/`: test setup and render helpers.
 7. Development topology: the API listens on port 3001 (`PORT` overrides). The Vite dev server listens on 5173 and proxies `/api` to the API. The client always calls relative `/api/...` URLs.
-8. Tests are co-located as `*.test.ts` / `*.test.tsx` and run as Vitest projects: `shared` and `server` in Node, `client` in jsdom with Testing Library. Server tests use in-memory SQLite, and client tests mock `fetch`. No test may need a running server or the network.
+8. Tests are co-located as `*.test.ts` / `*.test.tsx` and run as Vitest projects: `shared` and `server` in Node, `client` in jsdom with Testing Library. Server tests use in-memory SQLite, apart from the file-database tests that ADR 0002 rule 2 allows, and client tests mock `fetch`. No test may need a running server or the network.
 9. Dependencies:
    - The scaffold installs the full MVP set: React 18, React Router 6, Tailwind 4, Express 5, `better-sqlite3`, zod, `tsx`, Vitest, Testing Library, supertest.
    - A new runtime dependency needs a justification in the commit body. It must not add an external service, an extra server process, a component library, a state manager, or a real-time transport.
