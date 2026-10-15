@@ -1,10 +1,9 @@
+import type { ApiErrorIssue } from '@fired-up-pizza/shared';
 import type { z } from 'zod';
 import { AppError } from './errors';
 
-export interface ValidationIssue {
-  path: string;
-  message: string;
-}
+/** One entry of `details.issues`. The shape belongs to the shared error contract. */
+export type ValidationIssue = ApiErrorIssue;
 
 /**
  * Parses untrusted input (body, query, params) with a zod schema (ADR 0006).

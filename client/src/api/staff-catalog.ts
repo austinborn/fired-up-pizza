@@ -1,4 +1,9 @@
-import type { MenuItem, Topping } from '@fired-up-pizza/shared';
+import {
+  apiErrorIssues,
+  type ApiErrorIssue,
+  type MenuItem,
+  type Topping,
+} from '@fired-up-pizza/shared';
 import type {
   CreateMenuItemRequest,
   CreateToppingRequest,
@@ -57,12 +62,12 @@ export function updateTopping(
   return patchJson<Topping>(`/api/staff/toppings/${id}`, changes, options);
 }
 
-/** A problem with one request field, e.g. `{ path: 'name', message: 'Name is required' }`. */
-export interface FieldIssue {
-  /** The request field's name, such as "basePriceCents". */
-  path: string;
-  message: string;
-}
+/**
+ * A problem with one request field, e.g. `{ path: 'name', message: 'Name is
+ * required' }`, where `path` is the field's name, such as "basePriceCents".
+ * The shape belongs to the shared error contract.
+ */
+export type FieldIssue = ApiErrorIssue;
 
 /**
  * The per-field problems a failed create or update reports, so a form can show
@@ -77,21 +82,5 @@ export function fieldIssues(error: unknown): FieldIssue[] {
   ) {
     return [];
   }
-  const { details } = error;
-  if (typeof details !== 'object' || details === null || !('issues' in details)) {
-    return [];
-  }
-  const issues: unknown = details.issues;
-  return Array.isArray(issues) ? issues.filter(isFieldIssue) : [];
-}
-
-function isFieldIssue(value: unknown): value is FieldIssue {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'path' in value &&
-    typeof value.path === 'string' &&
-    'message' in value &&
-    typeof value.message === 'string'
-  );
+  return apiErrorIssues(error.details);
 }
