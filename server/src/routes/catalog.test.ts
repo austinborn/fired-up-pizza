@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
 import type { Db } from '../db/connection';
 import { CATALOG_SEED } from '../db/seed';
+import { createCatalogRepository } from '../repositories/catalog';
 import { createTestDatabase } from '../test/database';
 
 const CATALOG_PATHS = ['/api/menu-items', '/api/sizes', '/api/crusts', '/api/toppings'];
@@ -84,18 +85,31 @@ function seededToppings(names: readonly string[]): Topping[] {
   }));
 }
 
-// Hiding is a staff action that sets available = 0 and keeps the row
-// (ADR 0002 rule 7). The tests set the flag directly, so they do not depend on
-// the staff catalog API.
+// Hiding is a staff action that sets available to false and keeps the row
+// (ADR 0002 rule 7). The tests hide through the catalog repository's staff
+// writes, so they do not depend on the staff catalog API and run no SQL of
+// their own (ADR 0002 rule 5).
 
 function hideMenuItem(db: Db, name: string): void {
-  const { changes } = db.prepare('UPDATE menu_items SET available = 0 WHERE name = ?').run(name);
-  expect(changes).toBe(1);
+  const catalog = createCatalogRepository(db);
+  const item = catalog
+    .listMenuItems({ includeUnavailable: true })
+    .find((candidate) => candidate.name === name);
+  if (item === undefined) {
+    throw new Error(`No menu item named ${name}`);
+  }
+  expect(catalog.updateMenuItem(item.id, { available: false }).ok).toBe(true);
 }
 
 function hideTopping(db: Db, name: string): void {
-  const { changes } = db.prepare('UPDATE toppings SET available = 0 WHERE name = ?').run(name);
-  expect(changes).toBe(1);
+  const catalog = createCatalogRepository(db);
+  const topping = catalog
+    .listToppings({ includeUnavailable: true })
+    .find((candidate) => candidate.name === name);
+  if (topping === undefined) {
+    throw new Error(`No topping named ${name}`);
+  }
+  expect(catalog.updateTopping(topping.id, { available: false }).ok).toBe(true);
 }
 
 describe('customer catalog API', () => {
