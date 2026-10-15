@@ -40,7 +40,7 @@ State key:
 | `src/phone.ts`             | Phone normalize/format (ADR 0005)                           | Done    | `fup-qt5.4` |
 | `src/orders-api.ts`        | `PlaceOrderRequest`, `OrderDetails`                         | Planned | `fup-oe9.5` |
 | `src/staff-orders-api.ts`  | Staff status-update request types                           | Planned | `fup-b3a.1` |
-| `src/staff-catalog-api.ts` | Staff create/update request types                           | Planned | `fup-y7n.1` |
+| `src/staff-catalog-api.ts` | Staff create/update request types                           | Done    | `fup-y7n.1` |
 
 ### server/
 
@@ -66,7 +66,7 @@ State key:
 | `src/routes/orders.ts`                                      | `POST /api/orders`; `GET /api/orders?phone=`            | Stub    | `fup-oe9.5`, `fup-bq3.1` |
 | `src/routes/staff/index.ts`, `require-staff.ts`             | Staff mount point and access-control hook               | Done    | `fup-be5`                |
 | `src/routes/staff/orders.ts`                                | Staff queue and status transitions                      | Stub    | `fup-b3a.1`              |
-| `src/routes/staff/catalog.ts`                               | Menu item and topping management                        | Stub    | `fup-y7n.1`              |
+| `src/routes/staff/catalog.ts`                               | Menu item and topping management                        | Done    | `fup-y7n.1`              |
 | `src/mvp-flows.test.ts`                                     | End-to-end API flows per success criterion              | Planned | `fup-e6u.1`              |
 
 ### client/
