@@ -80,7 +80,7 @@ State key:
 | `src/test/setup.ts`, `src/test/render.tsx`                                          | jest-dom setup, `renderWithProviders`, `renderApp` | Done        | `fup-be5`                             |
 | `src/api/http.ts`, `src/hooks/`, view-state components, `src/lib/`                  | HTTP client, `useAsync`, `usePolling`, formatting  | Done        | `fup-qt5.5`                           |
 | `src/pages/customer/MenuPage.tsx`, `src/api/catalog.ts`                             | Menu, with `src/components/MenuItemCard.tsx`       | Done        | `fup-oe9.2`                           |
-| `src/context/CartContext.tsx`                                                       | Cart state with persistence                        | Planned     | `fup-oe9.3`                           |
+| `src/context/CartContext.tsx`                                                       | Cart state with persistence                        | Done        | `fup-oe9.3`                           |
 | `src/pages/customer/PizzaBuilderPage.tsx`                                           | Pizza builder                                      | Placeholder | `fup-oe9.4`                           |
 | `src/pages/customer/CartPage.tsx`, `OrderConfirmationPage.tsx`, `src/api/orders.ts` | Cart, checkout, confirmation                       | Placeholder | `fup-oe9.6`                           |
 | `src/pages/customer/OrderTrackingPage.tsx`                                          | Order tracking with polling                        | Placeholder | `fup-bq3.2`                           |
