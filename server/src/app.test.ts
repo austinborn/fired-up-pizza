@@ -1,13 +1,14 @@
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
-import { IN_MEMORY, openDatabase, type Db } from './db/connection';
+import type { Db } from './db/connection';
+import { createTestDatabase } from './test/database';
 
 describe('createApp', () => {
   let db: Db;
 
   beforeEach(() => {
-    db = openDatabase(IN_MEMORY);
+    db = createTestDatabase();
   });
 
   afterEach(() => {
