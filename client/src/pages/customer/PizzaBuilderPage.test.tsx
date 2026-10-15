@@ -1,7 +1,7 @@
 import type { Crust, MenuItem, Size, Topping } from '@fired-up-pizza/shared';
 import { MAX_TOPPINGS_PER_ITEM } from '@fired-up-pizza/shared/pricing';
-import { act, screen, within } from '@testing-library/react';
-import userEvent, { type UserEvent } from '@testing-library/user-event';
+import { act, screen, within, type Matcher } from '@testing-library/react';
+import userEvent, { PointerEventsCheckLevel, type UserEvent } from '@testing-library/user-event';
 import { Link, Route, Routes } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderApp, renderWithProviders } from '../../test/render';
@@ -169,43 +169,70 @@ function pendingResponse() {
   return { promise, send };
 }
 
+/**
+ * How long to wait for the page to change, such as for the catalog to arrive:
+ * 5 s rather than Testing Library's 1 s, because the gate often runs while
+ * other suites load the same host (ADR 0001 rule 2).
+ */
+const WAIT = { timeout: 5000 };
+
+/**
+ * user-event set up for this file's long click sequences. The test DOM has no
+ * stylesheets, so the pointer-events check that user-event runs on every click,
+ * which works out the computed style of the target and each of its ancestors,
+ * can never find `none`. With no delay, a click waits on the event loop once
+ * instead of three times, and on a busy host each wait is slow.
+ */
+function setupUser(): UserEvent {
+  return userEvent.setup({ delay: null, pointerEventsCheck: PointerEventsCheckLevel.Never });
+}
+
 /** Renders the whole app at the builder for `menuItemId` and waits for the builder. */
 async function openBuilder(menuItemId: number, name: string) {
   renderApp(`/menu/${menuItemId}`);
-  expect(await screen.findByRole('heading', { level: 1, name })).toBeInTheDocument();
-}
-
-function summary(): HTMLElement {
-  return screen.getByRole('region', { name: 'Your pizza' });
+  expect(await screen.findByRole('heading', { level: 1, name }, WAIT)).toBeInTheDocument();
 }
 
 function expectPrices(each: string, total: string) {
-  expect(summary()).toHaveTextContent(`Price each ${each}`);
-  expect(summary()).toHaveTextContent(`Total ${total}`);
+  const summary = screen.getByRole('region', { name: 'Your pizza' });
+  expect(summary).toHaveTextContent(`Price each ${each}`);
+  expect(summary).toHaveTextContent(`Total ${total}`);
 }
 
-function radio(name: string): HTMLElement {
-  return screen.getByRole('radio', { name });
+type ChoiceGroup = 'Size' | 'Crust' | 'Toppings';
+
+/** A group of choices, named by its legend. */
+function choiceGroup(name: ChoiceGroup): HTMLElement {
+  return screen.getByRole('group', { name });
 }
 
-function checkbox(name: string): HTMLElement {
-  return screen.getByRole('checkbox', { name });
+/**
+ * A size's or crust's radio button, or a topping's checkbox, found by its label
+ * within its group, e.g. choice('Size', 'Medium $13.74').
+ *
+ * A role query with a name works out the accessible name of every radio button
+ * or checkbox it searches, and checks the computed style of each match, which
+ * jsdom works out again after every change to the page. All twelve toppings sit
+ * in one group, so scoping alone cannot avoid that, and those lookups made the
+ * long click sequences here two to three times slower. Matching label text is
+ * far cheaper. 'labels every choice with its price' checks the roles and names.
+ */
+function choice(group: ChoiceGroup, label: Matcher): HTMLElement {
+  return within(choiceGroup(group)).getByLabelText(label);
+}
+
+/** A topping's checkbox, by the topping's name, which its price follows in the label. */
+function toppingCheckbox(name: string): HTMLElement {
+  return choice('Toppings', (label) => label.startsWith(`${name} +`));
 }
 
 function quantityField(): HTMLElement {
   return screen.getByRole('spinbutton', { name: 'Quantity' });
 }
 
-/** A topping's checkbox, named by the topping's name and then its price. */
-function toppingCheckbox(name: string): HTMLElement {
-  return screen.getByRole('checkbox', {
-    name: (accessibleName) => accessibleName.startsWith(`${name} +`),
-  });
-}
-
 /** Checks the choices in a group: their accessible names, in page order. */
-function expectChoices(group: string, role: 'radio' | 'checkbox', names: string[]) {
-  const choices = within(screen.getByRole('group', { name: group })).getAllByRole(role);
+function expectChoices(group: ChoiceGroup, role: 'radio' | 'checkbox', names: string[]) {
+  const choices = within(choiceGroup(group)).getAllByRole(role);
   expect(choices).toHaveLength(names.length);
   names.forEach((name, index) => {
     expect(choices[index]).toHaveAccessibleName(name);
@@ -226,7 +253,11 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('PizzaBuilderPage', () => {
+// Most tests render the whole app, and some click through a dozen choices. The
+// factory runs several suites at once on one host, which can make a test many
+// times slower than it runs alone, so each test gets 15 s rather than Vitest's
+// default 5 s (ADR 0001 rule 2).
+describe('PizzaBuilderPage', { timeout: 15_000 }, () => {
   it('shows a loading state, then the pizza with its first size and crust chosen', async () => {
     const fetchSpy = serveCatalog();
 
@@ -236,7 +267,7 @@ describe('PizzaBuilderPage', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Loading the pizza builder…');
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Margherita' }),
+      await screen.findByRole('heading', { level: 1, name: 'Margherita' }, WAIT),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
@@ -244,8 +275,8 @@ describe('PizzaBuilderPage', () => {
       ),
     ).toBeInTheDocument();
     expect(screen.queryByText('Loading the pizza builder…')).not.toBeInTheDocument();
-    expect(radio('Small $10.99')).toBeChecked();
-    expect(radio('Hand-Tossed')).toBeChecked();
+    expect(choice('Size', 'Small $10.99')).toBeChecked();
+    expect(choice('Crust', 'Hand-Tossed')).toBeChecked();
     expect(screen.queryByRole('checkbox', { checked: true })).not.toBeInTheDocument();
     expect(quantityField()).toHaveValue(1);
     expectPrices('$10.99', '$10.99');
@@ -280,25 +311,25 @@ describe('PizzaBuilderPage', () => {
       'Pineapple +$1.50',
       'Red Onions +$1.25',
     ]);
-    expect(screen.getByRole('group', { name: 'Toppings' })).toHaveAccessibleDescription(
+    expect(choiceGroup('Toppings')).toHaveAccessibleDescription(
       `Choose up to ${MAX_TOPPINGS_PER_ITEM}.`,
     );
   });
 
   it('updates the price each and the total as the choices change', async () => {
     serveCatalog();
-    const user = userEvent.setup();
+    const user = setupUser();
 
     await openBuilder(2, 'Margherita');
 
-    await user.click(radio('Medium $13.74'));
+    await user.click(choice('Size', 'Medium $13.74'));
     expectPrices('$13.74', '$13.74');
 
-    await user.click(radio('Stuffed Crust +$2.00'));
+    await user.click(choice('Crust', 'Stuffed Crust +$2.00'));
     expectPrices('$15.74', '$15.74');
 
-    await user.click(checkbox('Mushrooms +$1.50'));
-    await user.click(checkbox('Fresh Basil +$1.00'));
+    await user.click(choice('Toppings', 'Mushrooms +$1.50'));
+    await user.click(choice('Toppings', 'Fresh Basil +$1.00'));
     // round(1099 × 1.25) + 200 + 150 + 100
     expectPrices('$18.24', '$18.24');
 
@@ -306,11 +337,11 @@ describe('PizzaBuilderPage', () => {
     expect(quantityField()).toHaveValue(2);
     expectPrices('$18.24', '$36.48');
 
-    await user.click(checkbox('Mushrooms +$1.50'));
+    await user.click(choice('Toppings', 'Mushrooms +$1.50'));
     expectPrices('$16.74', '$33.48');
 
     // round(1099 × 1.5) = 1649: 1648.5 rounds half up.
-    await user.click(radio('Large $16.49'));
+    await user.click(choice('Size', 'Large $16.49'));
     expectPrices('$19.49', '$38.98');
 
     await setQuantity(user, 12);
@@ -319,53 +350,55 @@ describe('PizzaBuilderPage', () => {
 
   it(`stops at ${MAX_TOPPINGS_PER_ITEM} toppings until one is removed`, async () => {
     serveCatalog();
-    const user = userEvent.setup();
+    const user = setupUser();
 
     await openBuilder(1, 'Cheese');
-    const chosen = toppings.slice(0, MAX_TOPPINGS_PER_ITEM);
-    const leftOver = toppings.slice(MAX_TOPPINGS_PER_ITEM);
-    for (const { name } of chosen) {
-      await user.click(toppingCheckbox(name));
+    // Every checkbox is looked up before the first click. Once a click has
+    // changed the page, jsdom reads every label on it again for each lookup.
+    const checkboxes = toppings.map(({ name }) => toppingCheckbox(name));
+    const chosen = checkboxes.slice(0, MAX_TOPPINGS_PER_ITEM);
+    const leftOver = checkboxes.slice(MAX_TOPPINGS_PER_ITEM);
+    for (const checkbox of chosen) {
+      await user.click(checkbox);
     }
 
-    const toppingGroup = screen.getByRole('group', { name: 'Toppings' });
+    const toppingGroup = choiceGroup('Toppings');
     expect(toppingGroup).toHaveAccessibleDescription(
       `You've chosen ${MAX_TOPPINGS_PER_ITEM} toppings, the most one pizza can have.`,
     );
     expect(within(toppingGroup).getAllByRole('checkbox', { checked: true })).toHaveLength(
       MAX_TOPPINGS_PER_ITEM,
     );
-    for (const { name } of leftOver) {
-      const option = toppingCheckbox(name);
-      expect(option).toBeDisabled();
-      await user.click(option);
-      expect(option).not.toBeChecked();
+    for (const checkbox of leftOver) {
+      expect(checkbox).toBeDisabled();
+      await user.click(checkbox);
+      expect(checkbox).not.toBeChecked();
     }
     // 999 + the ten chosen toppings' 1750
     expectPrices('$27.49', '$27.49');
 
-    await user.click(checkbox('Bacon +$2.00'));
+    await user.click(choice('Toppings', 'Bacon +$2.00'));
 
     expect(toppingGroup).toHaveAccessibleDescription(`Choose up to ${MAX_TOPPINGS_PER_ITEM}.`);
-    for (const { name } of leftOver) {
-      expect(toppingCheckbox(name)).toBeEnabled();
+    for (const checkbox of leftOver) {
+      expect(checkbox).toBeEnabled();
     }
-    await user.click(checkbox('Red Onions +$1.25'));
-    expect(checkbox('Red Onions +$1.25')).toBeChecked();
-    expect(checkbox('Pineapple +$1.50')).toBeDisabled();
+    await user.click(choice('Toppings', 'Red Onions +$1.25'));
+    expect(choice('Toppings', 'Red Onions +$1.25')).toBeChecked();
+    expect(choice('Toppings', 'Pineapple +$1.50')).toBeDisabled();
     // 999 + 1750 - 200 + 125
     expectPrices('$26.74', '$26.74');
   });
 
   it('adds the configured pizza to the cart and opens the cart', async () => {
     serveCatalog();
-    const user = userEvent.setup();
+    const user = setupUser();
 
     await openBuilder(2, 'Margherita');
-    await user.click(radio('Medium $13.74'));
-    await user.click(radio('Stuffed Crust +$2.00'));
-    await user.click(checkbox('Mushrooms +$1.50'));
-    await user.click(checkbox('Fresh Basil +$1.00'));
+    await user.click(choice('Size', 'Medium $13.74'));
+    await user.click(choice('Crust', 'Stuffed Crust +$2.00'));
+    await user.click(choice('Toppings', 'Mushrooms +$1.50'));
+    await user.click(choice('Toppings', 'Fresh Basil +$1.00'));
     await user.click(screen.getByRole('button', { name: 'Increase quantity' }));
     await user.click(screen.getByRole('button', { name: 'Add to cart' }));
 
@@ -393,7 +426,7 @@ describe('PizzaBuilderPage', () => {
 
   it('adds a pizza with its first size and crust and no toppings as it opens', async () => {
     serveCatalog();
-    const user = userEvent.setup();
+    const user = setupUser();
 
     await openBuilder(3, 'Pepperoni');
     await user.click(screen.getByRole('button', { name: 'Add to cart' }));
@@ -422,28 +455,28 @@ describe('PizzaBuilderPage', () => {
       ...catalog,
       toppings: [topping(12, 'Fresh Basil', 100), topping(7, 'Mushrooms', 150)],
     });
-    const user = userEvent.setup();
+    const user = setupUser();
 
     await openBuilder(2, 'Margherita');
-    act(() => radio('Small $10.99').focus());
+    act(() => choice('Size', 'Small $10.99').focus());
 
     await user.keyboard('{ArrowRight}');
-    expect(radio('Medium $13.74')).toBeChecked();
-    expect(radio('Medium $13.74')).toHaveFocus();
+    expect(choice('Size', 'Medium $13.74')).toBeChecked();
+    expect(choice('Size', 'Medium $13.74')).toHaveFocus();
 
     await user.tab();
-    expect(radio('Hand-Tossed')).toHaveFocus();
+    expect(choice('Crust', 'Hand-Tossed')).toHaveFocus();
     await user.keyboard('{ArrowDown}{ArrowDown}');
-    expect(radio('Stuffed Crust +$2.00')).toBeChecked();
+    expect(choice('Crust', 'Stuffed Crust +$2.00')).toBeChecked();
 
     await user.tab();
-    expect(checkbox('Fresh Basil +$1.00')).toHaveFocus();
+    expect(choice('Toppings', 'Fresh Basil +$1.00')).toHaveFocus();
     await user.keyboard(' ');
     await user.tab();
-    expect(checkbox('Mushrooms +$1.50')).toHaveFocus();
+    expect(choice('Toppings', 'Mushrooms +$1.50')).toHaveFocus();
     await user.keyboard(' ');
-    expect(checkbox('Fresh Basil +$1.00')).toBeChecked();
-    expect(checkbox('Mushrooms +$1.50')).toBeChecked();
+    expect(choice('Toppings', 'Fresh Basil +$1.00')).toBeChecked();
+    expect(choice('Toppings', 'Mushrooms +$1.50')).toBeChecked();
 
     await user.tab();
     expect(screen.getByRole('button', { name: 'Decrease quantity' })).toHaveFocus();
@@ -472,7 +505,7 @@ describe('PizzaBuilderPage', () => {
 
   it('starts over when the route moves to another pizza', async () => {
     const fetchSpy = serveCatalog();
-    const user = userEvent.setup();
+    const user = setupUser();
 
     renderWithProviders(
       <>
@@ -484,17 +517,17 @@ describe('PizzaBuilderPage', () => {
       { route: '/menu/2' },
     );
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Margherita' }),
+      await screen.findByRole('heading', { level: 1, name: 'Margherita' }, WAIT),
     ).toBeInTheDocument();
-    await user.click(radio('Large $16.49'));
-    await user.click(checkbox('Mushrooms +$1.50'));
+    await user.click(choice('Size', 'Large $16.49'));
+    await user.click(choice('Toppings', 'Mushrooms +$1.50'));
     await user.click(screen.getByRole('button', { name: 'Increase quantity' }));
 
     await user.click(screen.getByRole('link', { name: 'Open the cheese pizza' }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Cheese' })).toBeInTheDocument();
-    expect(radio('Small $9.99')).toBeChecked();
-    expect(checkbox('Mushrooms +$1.50')).not.toBeChecked();
+    expect(choice('Size', 'Small $9.99')).toBeChecked();
+    expect(choice('Toppings', 'Mushrooms +$1.50')).not.toBeChecked();
     expect(quantityField()).toHaveValue(1);
     expectPrices('$9.99', '$9.99');
     // The same page kept its catalog, so only its key started the choices over.
@@ -512,7 +545,7 @@ describe('PizzaBuilderPage', () => {
     renderApp(path);
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Pizza not found' }),
+      await screen.findByRole('heading', { level: 1, name: 'Pizza not found' }, WAIT),
     ).toBeInTheDocument();
     expect(screen.getByText("That pizza isn't on our menu right now.")).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Back to the menu' })).toHaveAttribute('href', '/');
@@ -521,13 +554,17 @@ describe('PizzaBuilderPage', () => {
 
   it('goes back to the menu from the not-found state', async () => {
     serveCatalog();
-    const user = userEvent.setup();
+    const user = setupUser();
 
     renderApp('/menu/999');
-    await user.click(await screen.findByRole('link', { name: 'Back to the menu' }));
+    await user.click(await screen.findByRole('link', { name: 'Back to the menu' }, WAIT));
 
-    expect(await screen.findByRole('heading', { level: 1, name: 'Menu' })).toBeInTheDocument();
-    expect(await screen.findByRole('link', { name: 'Margherita from $10.99' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Menu' }, WAIT),
+    ).toBeInTheDocument();
+    expect(
+      await screen.findByRole('link', { name: 'Margherita from $10.99' }, WAIT),
+    ).toBeInTheDocument();
   });
 
   it.each([
@@ -540,7 +577,7 @@ describe('PizzaBuilderPage', () => {
 
     renderApp('/menu/2');
 
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByRole('alert', {}, WAIT);
     expect(alert).toHaveTextContent("Couldn't load this pizza");
     expect(alert).toHaveTextContent("Can't reach the server.");
     expect(screen.queryByText('Pizza not found')).not.toBeInTheDocument();
@@ -559,7 +596,7 @@ describe('PizzaBuilderPage', () => {
 
     renderApp('/menu/2');
 
-    const alert = await screen.findByRole('alert');
+    const alert = await screen.findByRole('alert', {}, WAIT);
     expect(alert).toHaveTextContent("Couldn't load this pizza");
     expect(alert).toHaveTextContent('Something went wrong. Please try again.');
   });
@@ -569,11 +606,11 @@ describe('PizzaBuilderPage', () => {
     const fetchSpy = serveCatalog(catalog, {
       '/api/toppings': [new TypeError('Failed to fetch'), retry.promise],
     });
-    const user = userEvent.setup();
+    const user = setupUser();
 
     renderApp('/menu/2');
     await user.click(
-      within(await screen.findByRole('alert')).getByRole('button', { name: 'Try again' }),
+      within(await screen.findByRole('alert', {}, WAIT)).getByRole('button', { name: 'Try again' }),
     );
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
@@ -582,9 +619,9 @@ describe('PizzaBuilderPage', () => {
     retry.send(jsonResponse(toppings));
 
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Margherita' }),
+      await screen.findByRole('heading', { level: 1, name: 'Margherita' }, WAIT),
     ).toBeInTheDocument();
-    expect(checkbox('Bacon +$2.00')).not.toBeChecked();
+    expect(choice('Toppings', 'Bacon +$2.00')).not.toBeChecked();
     expect(fetchSpy.mock.calls.map(([input]) => pathOf(input))).toEqual([
       ...CATALOG_PATHS,
       ...CATALOG_PATHS,
@@ -607,14 +644,12 @@ describe('PizzaBuilderPage', () => {
 
   it('can still be ordered without toppings when none are available', async () => {
     serveCatalog({ ...catalog, toppings: [] });
-    const user = userEvent.setup();
+    const user = setupUser();
 
     await openBuilder(2, 'Margherita');
 
     expect(
-      within(screen.getByRole('group', { name: 'Toppings' })).getByText(
-        'No toppings are available right now.',
-      ),
+      within(choiceGroup('Toppings')).getByText('No toppings are available right now.'),
     ).toBeInTheDocument();
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
     expectPrices('$10.99', '$10.99');
