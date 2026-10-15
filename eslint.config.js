@@ -46,6 +46,9 @@ export default defineConfig(
     plugins: { 'react-refresh': reactRefresh },
     rules: {
       'react-refresh/only-export-components': ['error', { allowConstantExport: true }],
+      // useAsync and usePolling take a deps list like useEffect, so check it
+      // the same way: a missing dep would show one input's data under another.
+      'react-hooks/exhaustive-deps': ['warn', { additionalHooks: '^(useAsync|usePolling)$' }],
     },
   },
   {
