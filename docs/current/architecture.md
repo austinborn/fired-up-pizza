@@ -44,30 +44,30 @@ State key:
 
 ### server/
 
-| Path                                                        | Responsibility                                          | State   | Owner                    |
-| ----------------------------------------------------------- | ------------------------------------------------------- | ------- | ------------------------ |
-| `src/index.ts`                                              | Process entry: config, database, listen                 | Done    | `fup-be5`, `fup-qt5.1`   |
-| `src/app.ts`, `src/app-dependencies.ts`                     | `createApp({ db })`: JSON parsing, routers, 404, errors | Done    | `fup-be5`                |
-| `src/config.ts`                                             | `PORT`, `DATABASE_PATH`                                 | Done    | `fup-be5`                |
-| `src/db/connection.ts`                                      | `openDatabase()` with foreign keys and WAL; health ping | Done    | `fup-be5`                |
-| `src/db/migrate.ts`, `src/db/migrations/`, `src/db/seed.ts` | Migration runner, schema, catalog seed (ADR 0002)       | Done    | `fup-qt5.1`              |
-| `src/test/database.ts`                                      | `createTestDatabase({ seed })` for tests                | Done    | `fup-qt5.1`              |
-| `src/http/errors.ts`                                        | `AppError`, code→status map, error and 404 handlers     | Done    | `fup-be5`                |
-| `src/http/validate.ts`                                      | `parseWith(schema, input)` (zod)                        | Done    | `fup-be5`                |
-| `src/repositories/catalog.ts`                               | Catalog reads; staff writes                             | Done    | `fup-qt5.1`, `fup-y7n.1` |
-| `src/repositories/order-status.ts`                          | All `orders.status` SQL                                 | Done    | `fup-qt5.3`              |
-| `src/repositories/orders.ts`                                | Order insert and read model                             | Done    | `fup-oe9.5`              |
-| `src/services/pricing.ts`                                   | `priceOrderItems` (server-side prices)                  | Done    | `fup-qt5.2`              |
-| `src/services/order-status.ts`                              | The only writer of order status                         | Done    | `fup-qt5.3`              |
-| `src/services/orders.ts`                                    | Place-order use case                                    | Done    | `fup-oe9.5`              |
-| `src/identity/index.ts`                                     | `resolveCustomerIdentity`, phone zod schema             | Done    | `fup-qt5.4`              |
-| `src/routes/health.ts`                                      | `GET /api/health`                                       | Done    | `fup-be5`                |
-| `src/routes/catalog.ts`                                     | Customer catalog `GET`s                                 | Done    | `fup-oe9.1`              |
-| `src/routes/orders.ts`                                      | `POST /api/orders`; `GET /api/orders?phone=`            | Done    | `fup-oe9.5`, `fup-bq3.1` |
-| `src/routes/staff/index.ts`, `require-staff.ts`             | Staff mount point and access-control hook               | Done    | `fup-be5`                |
-| `src/routes/staff/orders.ts`                                | Staff queue and status transitions                      | Done    | `fup-b3a.1`              |
-| `src/routes/staff/catalog.ts`                               | Menu item and topping management                        | Done    | `fup-y7n.1`              |
-| `src/mvp-flows.test.ts`                                     | End-to-end API flows per success criterion              | Planned | `fup-e6u.1`              |
+| Path                                                        | Responsibility                                          | State | Owner                    |
+| ----------------------------------------------------------- | ------------------------------------------------------- | ----- | ------------------------ |
+| `src/index.ts`                                              | Process entry: config, database, listen                 | Done  | `fup-be5`, `fup-qt5.1`   |
+| `src/app.ts`, `src/app-dependencies.ts`                     | `createApp({ db })`: JSON parsing, routers, 404, errors | Done  | `fup-be5`                |
+| `src/config.ts`                                             | `PORT`, `DATABASE_PATH`                                 | Done  | `fup-be5`                |
+| `src/db/connection.ts`                                      | `openDatabase()` with foreign keys and WAL; health ping | Done  | `fup-be5`                |
+| `src/db/migrate.ts`, `src/db/migrations/`, `src/db/seed.ts` | Migration runner, schema, catalog seed (ADR 0002)       | Done  | `fup-qt5.1`              |
+| `src/test/database.ts`                                      | `createTestDatabase({ seed })` for tests                | Done  | `fup-qt5.1`              |
+| `src/http/errors.ts`                                        | `AppError`, code→status map, error and 404 handlers     | Done  | `fup-be5`                |
+| `src/http/validate.ts`                                      | `parseWith(schema, input)` (zod)                        | Done  | `fup-be5`                |
+| `src/repositories/catalog.ts`                               | Catalog reads; staff writes                             | Done  | `fup-qt5.1`, `fup-y7n.1` |
+| `src/repositories/order-status.ts`                          | All `orders.status` SQL                                 | Done  | `fup-qt5.3`              |
+| `src/repositories/orders.ts`                                | Order insert and read model                             | Done  | `fup-oe9.5`              |
+| `src/services/pricing.ts`                                   | `priceOrderItems` (server-side prices)                  | Done  | `fup-qt5.2`              |
+| `src/services/order-status.ts`                              | The only writer of order status                         | Done  | `fup-qt5.3`              |
+| `src/services/orders.ts`                                    | Place-order use case                                    | Done  | `fup-oe9.5`              |
+| `src/identity/index.ts`                                     | `resolveCustomerIdentity`, phone zod schema             | Done  | `fup-qt5.4`              |
+| `src/routes/health.ts`                                      | `GET /api/health`                                       | Done  | `fup-be5`                |
+| `src/routes/catalog.ts`                                     | Customer catalog `GET`s                                 | Done  | `fup-oe9.1`              |
+| `src/routes/orders.ts`                                      | `POST /api/orders`; `GET /api/orders?phone=`            | Done  | `fup-oe9.5`, `fup-bq3.1` |
+| `src/routes/staff/index.ts`, `require-staff.ts`             | Staff mount point and access-control hook               | Done  | `fup-be5`                |
+| `src/routes/staff/orders.ts`                                | Staff queue and status transitions                      | Done  | `fup-b3a.1`              |
+| `src/routes/staff/catalog.ts`                               | Menu item and topping management                        | Done  | `fup-y7n.1`              |
+| `src/mvp-flows.test.ts`                                     | End-to-end API flows per success criterion              | Done  | `fup-e6u.1`              |
 
 ### client/
 
