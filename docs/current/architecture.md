@@ -82,7 +82,7 @@ State key:
 | `src/pages/customer/MenuPage.tsx`, `src/api/catalog.ts`                             | Menu, with `src/components/MenuItemCard.tsx`       | Done        | `fup-oe9.2`                           |
 | `src/context/CartContext.tsx`                                                       | Cart state with persistence                        | Done        | `fup-oe9.3`                           |
 | `src/pages/customer/PizzaBuilderPage.tsx`                                           | Pizza builder                                      | Placeholder | `fup-oe9.4`                           |
-| `src/pages/customer/CartPage.tsx`, `OrderConfirmationPage.tsx`, `src/api/orders.ts` | Cart, checkout, confirmation                       | Placeholder | `fup-oe9.6`                           |
+| `src/pages/customer/CartPage.tsx`, `OrderConfirmationPage.tsx`, `src/api/orders.ts` | Cart, checkout, confirmation                       | Done        | `fup-oe9.6`                           |
 | `src/pages/customer/OrderTrackingPage.tsx`                                          | Order tracking with polling                        | Placeholder | `fup-bq3.2`                           |
 | `src/pages/staff/StaffOrderQueuePage.tsx`, `src/api/staff-orders.ts`                | Staff order queue                                  | Placeholder | `fup-b3a.2`                           |
 | `src/pages/staff/StaffMenuPage.tsx`, `src/api/staff-catalog.ts`                     | Menu management, with `src/components/staff/`      | Done        | `fup-y7n.2`                           |
