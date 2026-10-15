@@ -35,7 +35,7 @@ State key:
 | -------------------------- | ----------------------------------------------------------- | ------- | ----------- |
 | `src/domain.ts`            | Domain entity types, `ORDER_STATUSES`, `isOrderStatus`      | Done    | `fup-be5`   |
 | `src/api-error.ts`         | Error codes and response shape, `isApiErrorBody` (ADR 0006) | Done    | `fup-be5`   |
-| `src/pricing.ts`           | Pricing formula and ordering limits (ADR 0003)              | Planned | `fup-qt5.2` |
+| `src/pricing.ts`           | Pricing formula and ordering limits (ADR 0003)              | Done    | `fup-qt5.2` |
 | `src/order-status.ts`      | Transition table and action labels (ADR 0004)               | Planned | `fup-qt5.3` |
 | `src/phone.ts`             | Phone normalize/format (ADR 0005)                           | Done    | `fup-qt5.4` |
 | `src/orders-api.ts`        | `PlaceOrderRequest`, `OrderDetails`                         | Planned | `fup-oe9.5` |
@@ -57,7 +57,7 @@ State key:
 | `src/repositories/catalog.ts`                               | Catalog reads; staff writes                             | Done    | `fup-qt5.1`, `fup-y7n.1` |
 | `src/repositories/order-status.ts`                          | All `orders.status` SQL                                 | Planned | `fup-qt5.3`              |
 | `src/repositories/orders.ts`                                | Order insert and read model                             | Planned | `fup-oe9.5`              |
-| `src/services/pricing.ts`                                   | `priceOrderItems` (server-side prices)                  | Planned | `fup-qt5.2`              |
+| `src/services/pricing.ts`                                   | `priceOrderItems` (server-side prices)                  | Done    | `fup-qt5.2`              |
 | `src/services/order-status.ts`                              | The only writer of order status                         | Planned | `fup-qt5.3`              |
 | `src/services/orders.ts`                                    | Place-order use case                                    | Planned | `fup-oe9.5`              |
 | `src/identity/index.ts`                                     | `resolveCustomerIdentity`, phone zod schema             | Done    | `fup-qt5.4`              |
