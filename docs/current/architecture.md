@@ -38,7 +38,7 @@ State key:
 | `src/pricing.ts`           | Pricing formula and ordering limits (ADR 0003)              | Done    | `fup-qt5.2` |
 | `src/order-status.ts`      | Transition table and action labels (ADR 0004)               | Done    | `fup-qt5.3` |
 | `src/phone.ts`             | Phone normalize/format (ADR 0005)                           | Done    | `fup-qt5.4` |
-| `src/orders-api.ts`        | `PlaceOrderRequest`, `OrderDetails`                         | Planned | `fup-oe9.5` |
+| `src/orders-api.ts`        | `PlaceOrderRequest`, `OrderDetails`                         | Done    | `fup-oe9.5` |
 | `src/staff-orders-api.ts`  | Staff status-update request types                           | Planned | `fup-b3a.1` |
 | `src/staff-catalog-api.ts` | Staff create/update request types                           | Done    | `fup-y7n.1` |
 
@@ -56,14 +56,14 @@ State key:
 | `src/http/validate.ts`                                      | `parseWith(schema, input)` (zod)                        | Done    | `fup-be5`                |
 | `src/repositories/catalog.ts`                               | Catalog reads; staff writes                             | Done    | `fup-qt5.1`, `fup-y7n.1` |
 | `src/repositories/order-status.ts`                          | All `orders.status` SQL                                 | Done    | `fup-qt5.3`              |
-| `src/repositories/orders.ts`                                | Order insert and read model                             | Planned | `fup-oe9.5`              |
+| `src/repositories/orders.ts`                                | Order insert and read model                             | Done    | `fup-oe9.5`              |
 | `src/services/pricing.ts`                                   | `priceOrderItems` (server-side prices)                  | Done    | `fup-qt5.2`              |
 | `src/services/order-status.ts`                              | The only writer of order status                         | Done    | `fup-qt5.3`              |
-| `src/services/orders.ts`                                    | Place-order use case                                    | Planned | `fup-oe9.5`              |
+| `src/services/orders.ts`                                    | Place-order use case                                    | Done    | `fup-oe9.5`              |
 | `src/identity/index.ts`                                     | `resolveCustomerIdentity`, phone zod schema             | Done    | `fup-qt5.4`              |
 | `src/routes/health.ts`                                      | `GET /api/health`                                       | Done    | `fup-be5`                |
 | `src/routes/catalog.ts`                                     | Customer catalog `GET`s                                 | Done    | `fup-oe9.1`              |
-| `src/routes/orders.ts`                                      | `POST /api/orders`; `GET /api/orders?phone=`            | Stub    | `fup-oe9.5`, `fup-bq3.1` |
+| `src/routes/orders.ts`                                      | `POST /api/orders`; `GET /api/orders?phone=`            | Done    | `fup-oe9.5`, `fup-bq3.1` |
 | `src/routes/staff/index.ts`, `require-staff.ts`             | Staff mount point and access-control hook               | Done    | `fup-be5`                |
 | `src/routes/staff/orders.ts`                                | Staff queue and status transitions                      | Stub    | `fup-b3a.1`              |
 | `src/routes/staff/catalog.ts`                               | Menu item and topping management                        | Done    | `fup-y7n.1`              |
