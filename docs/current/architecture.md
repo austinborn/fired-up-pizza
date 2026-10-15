@@ -50,11 +50,11 @@ State key:
 | `src/app.ts`, `src/app-dependencies.ts`                     | `createApp({ db })`: JSON parsing, routers, 404, errors | Done    | `fup-be5`                |
 | `src/config.ts`                                             | `PORT`, `DATABASE_PATH`                                 | Done    | `fup-be5`                |
 | `src/db/connection.ts`                                      | `openDatabase()` with foreign keys and WAL; health ping | Done    | `fup-be5`                |
-| `src/db/migrate.ts`, `src/db/migrations/`, `src/db/seed.ts` | Migration runner, schema, catalog seed (ADR 0002)       | Planned | `fup-qt5.1`              |
-| `src/test/database.ts`                                      | `createTestDatabase({ seed })` for tests                | Planned | `fup-qt5.1`              |
+| `src/db/migrate.ts`, `src/db/migrations/`, `src/db/seed.ts` | Migration runner, schema, catalog seed (ADR 0002)       | Done    | `fup-qt5.1`              |
+| `src/test/database.ts`                                      | `createTestDatabase({ seed })` for tests                | Done    | `fup-qt5.1`              |
 | `src/http/errors.ts`                                        | `AppError`, code→status map, error and 404 handlers     | Done    | `fup-be5`                |
 | `src/http/validate.ts`                                      | `parseWith(schema, input)` (zod)                        | Done    | `fup-be5`                |
-| `src/repositories/catalog.ts`                               | Catalog reads; staff writes                             | Planned | `fup-qt5.1`, `fup-y7n.1` |
+| `src/repositories/catalog.ts`                               | Catalog reads; staff writes                             | Done    | `fup-qt5.1`, `fup-y7n.1` |
 | `src/repositories/order-status.ts`                          | All `orders.status` SQL                                 | Planned | `fup-qt5.3`              |
 | `src/repositories/orders.ts`                                | Order insert and read model                             | Planned | `fup-oe9.5`              |
 | `src/services/pricing.ts`                                   | `priceOrderItems` (server-side prices)                  | Planned | `fup-qt5.2`              |
