@@ -30,9 +30,13 @@ export class AppError extends Error {
   }
 }
 
-/** Mounted after all /api routers so unknown API paths get a JSON 404. */
+/**
+ * Mounted after all /api routers so unknown API paths get a JSON 404. The
+ * message names the path but not the query string, which is where phone
+ * numbers travel (ADR 0005 rule 5).
+ */
 export const notFoundHandler: RequestHandler = (req, _res, next) => {
-  next(new AppError('NOT_FOUND', `No route for ${req.method} ${req.originalUrl}`));
+  next(new AppError('NOT_FOUND', `No route for ${req.method} ${req.baseUrl}${req.path}`));
 };
 
 export const errorHandler: ErrorRequestHandler = (err, _req, res, next) => {

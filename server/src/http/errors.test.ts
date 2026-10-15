@@ -2,7 +2,7 @@ import { API_ERROR_CODES } from '@fired-up-pizza/shared';
 import express, { type Request, type Response } from 'express';
 import request from 'supertest';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AppError, STATUS_BY_CODE, errorHandler } from './errors';
+import { AppError, STATUS_BY_CODE, errorHandler, notFoundHandler } from './errors';
 
 function appThatThrows(error: unknown) {
   const app = express();
@@ -77,5 +77,21 @@ describe('errorHandler', () => {
     });
     expect(JSON.stringify(res.body)).not.toContain('secret');
     expect(consoleError).toHaveBeenCalledOnce();
+  });
+});
+
+describe('notFoundHandler', () => {
+  it('names the path but leaves the query string, and its phone number, out of the message', async () => {
+    const app = express();
+    app.use('/api', notFoundHandler);
+    app.use(errorHandler);
+
+    const res = await request(app).get('/api/orders?phone=%2B15551234567');
+
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({
+      error: { code: 'NOT_FOUND', message: 'No route for GET /api/orders' },
+    });
+    expect(JSON.stringify(res.body)).not.toContain('5551234567');
   });
 });

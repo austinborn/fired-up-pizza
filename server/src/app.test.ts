@@ -49,7 +49,9 @@ describe('createApp', () => {
     const res = await request(createApp({ db })).get('/api/staff/does-not-exist');
 
     expect(res.status).toBe(404);
-    expect(res.body.error.code).toBe('NOT_FOUND');
+    expect(res.body).toEqual({
+      error: { code: 'NOT_FOUND', message: 'No route for GET /api/staff/does-not-exist' },
+    });
   });
 
   it('rejects malformed JSON bodies as VALIDATION_ERROR', async () => {
