@@ -11,9 +11,10 @@ import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../app';
 import type { Db } from '../db/connection';
+import { resolveCustomerIdentity } from '../identity';
 import { createCatalogRepository, type CatalogRepository } from '../repositories/catalog';
 import { getOrderDetails, listOrderDetails } from '../repositories/orders';
-import { recordInitialStatus } from '../services/order-status';
+import { recordInitialStatus, transitionOrderStatus } from '../services/order-status';
 import { placeOrder } from '../services/orders';
 import { createTestDatabase } from '../test/database';
 
@@ -587,6 +588,282 @@ describe('POST /api/orders', () => {
       });
       expect(recordInitialStatus).toHaveBeenCalledOnce();
       expect(storedOrders()).toEqual([]);
+    });
+  });
+});
+
+describe('GET /api/orders', () => {
+  // Other customers: one digit away from PHONE, PHONE's line number in another
+  // area code, and an unrelated number. NEW_PHONE never orders.
+  const NEXT_DOOR_PHONE = '+12125550143';
+  const OTHER_AREA_PHONE = '+16465550142';
+  const OTHER_PHONE = '+13125550199';
+  const NEW_PHONE = '+17185550123';
+
+  let db: Db;
+  let item: PlaceOrderItem;
+  let now: number;
+
+  beforeEach(() => {
+    db = createTestDatabase({ seed: true });
+    const catalog = createCatalogRepository(db);
+    item = {
+      menuItemId: named(catalog.listMenuItems(), 'Cheese').id,
+      sizeId: named(catalog.listSizes(), 'Medium').id,
+      crustId: named(catalog.listCrusts(), 'Hand-Tossed').id,
+      toppingIds: [named(catalog.listToppings(), 'Pepperoni').id],
+      quantity: 1,
+    };
+    // Only Date is faked, so each order gets its own createdAt while Express and
+    // supertest keep real timers.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    now = Date.parse('2026-10-14T18:00:00.000Z');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.resetAllMocks();
+    db.close();
+  });
+
+  /**
+   * Places a one-pizza order through the place-order service, a minute after the
+   * previous one, for the customer behind `phone` in any accepted format.
+   */
+  function placeFor(phone: string): OrderDetails {
+    now += 60_000;
+    vi.setSystemTime(now);
+    return placeOrder(db, { customer: resolveCustomerIdentity(phone), notes: '', items: [item] });
+  }
+
+  /** GET /api/orders with these query parameters, or with this raw query string. */
+  function lookup(query: Record<string, string> | string) {
+    return request(createApp({ db })).get('/api/orders').query(query);
+  }
+
+  /** The ids of the orders in a lookup response, in the order it lists them. */
+  function idsOf(res: { body: OrderDetails[] }): number[] {
+    return res.body.map(({ id }) => id);
+  }
+
+  describe('looking up orders', () => {
+    it("returns the phone's orders newest first, in every status, each with its status history", async () => {
+      const delivered = placeFor('(212) 555-0142');
+      placeFor(OTHER_PHONE);
+      const cancelled = placeFor('212.555.0142');
+      const placed = placeFor(PHONE);
+      for (const status of ['preparing', 'ready', 'delivered'] as const) {
+        transitionOrderStatus(db, delivered.id, status);
+      }
+      transitionOrderStatus(db, cancelled.id, 'cancelled');
+
+      const res = await lookup({ phone: '(212) 555-0142' });
+
+      expect(res.status).toBe(200);
+      expect(res.type).toBe('application/json');
+      expect(res.body).toStrictEqual(
+        [placed, cancelled, delivered].map(({ id }) => getOrderDetails(db, id)),
+      );
+      expect(res.body).toMatchObject([
+        {
+          phoneNumber: PHONE,
+          status: 'placed',
+          createdAt: '2026-10-14T18:04:00.000Z',
+          statusEvents: [{ fromStatus: null, toStatus: 'placed' }],
+        },
+        {
+          phoneNumber: PHONE,
+          status: 'cancelled',
+          createdAt: '2026-10-14T18:03:00.000Z',
+          statusEvents: [
+            { fromStatus: null, toStatus: 'placed' },
+            { fromStatus: 'placed', toStatus: 'cancelled' },
+          ],
+        },
+        {
+          phoneNumber: PHONE,
+          status: 'delivered',
+          createdAt: '2026-10-14T18:01:00.000Z',
+          statusEvents: [
+            { fromStatus: null, toStatus: 'placed' },
+            { fromStatus: 'placed', toStatus: 'preparing' },
+            { fromStatus: 'preparing', toStatus: 'ready' },
+            { fromStatus: 'ready', toStatus: 'delivered' },
+          ],
+        },
+      ]);
+    });
+
+    it('returns an empty array for a phone number with no orders', async () => {
+      placeFor(PHONE);
+
+      const res = await lookup({ phone: NEW_PHONE });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual([]);
+    });
+
+    it.each([
+      '(212) 555-0142',
+      '212-555-0142',
+      '212.555.0142',
+      '2125550142',
+      '1 212 555 0142',
+      '+1 (212) 555-0142',
+      '+12125550142',
+    ])(
+      'finds the same orders for the phone number written as %j (ADR 0005 rule 3)',
+      async (phone) => {
+        const first = placeFor('(212) 555-0142');
+        placeFor(NEXT_DOOR_PHONE);
+        const second = placeFor('+1 212.555.0142');
+
+        const res = await lookup({ phone });
+
+        expect(res.status).toBe(200);
+        expect(idsOf(res)).toEqual([second.id, first.id]);
+      },
+    );
+
+    it('finds the orders when the + of a +1 number arrives unencoded, which decodes as a space', async () => {
+      const order = placeFor(PHONE);
+
+      const res = await lookup('phone=+12125550142');
+
+      expect(res.status).toBe(200);
+      expect(idsOf(res)).toEqual([order.id]);
+    });
+
+    it("returns at most the 20 newest orders, counting only the phone's own", async () => {
+      const mine: number[] = [];
+      for (let count = 0; count < 21; count += 1) {
+        mine.push(placeFor(PHONE).id);
+        placeFor(OTHER_PHONE);
+      }
+
+      const res = await lookup({ phone: PHONE });
+
+      expect(res.status).toBe(200);
+      expect(idsOf(res)).toEqual(mine.slice(1).toReversed());
+    });
+
+    it('ignores other parameters, so a client cannot change the limit, the sort, or whose orders it gets', async () => {
+      const first = placeFor(PHONE);
+      const second = placeFor(PHONE);
+      placeFor(OTHER_PHONE);
+
+      const res = await lookup({
+        phone: PHONE,
+        limit: '1',
+        sort: 'oldest',
+        status: 'cancelled',
+        phoneNumber: OTHER_PHONE,
+      });
+
+      expect(res.status).toBe(200);
+      expect(idsOf(res)).toEqual([second.id, first.id]);
+    });
+
+    it('never logs the phone number (ADR 0005 rule 5)', async () => {
+      const spies = (['log', 'info', 'warn', 'error', 'debug'] as const).map((method) =>
+        vi.spyOn(console, method).mockImplementation(() => undefined),
+      );
+      placeFor(PHONE);
+
+      await lookup({ phone: PHONE });
+      await lookup({ phone: '212-555-014' });
+      await lookup(`phone=${encodeURIComponent(PHONE)}&phone=${encodeURIComponent(PHONE)}`);
+
+      for (const spy of spies) {
+        expect(spy).not.toHaveBeenCalled();
+      }
+    });
+  });
+
+  describe("keeping each customer's orders private (ADR 0005 rule 4)", () => {
+    const PHONES = [PHONE, NEXT_DOOR_PHONE, OTHER_AREA_PHONE, OTHER_PHONE];
+    let placedIds: Map<string, number[]>;
+
+    beforeEach(() => {
+      placedIds = new Map(PHONES.map((phone) => [phone, []]));
+      for (let round = 0; round < 3; round += 1) {
+        for (const phone of PHONES) {
+          placedIds.get(phone)?.push(placeFor(phone).id);
+        }
+      }
+    });
+
+    it.each(PHONES)('returns %s only its own orders and no other phone number', async (phone) => {
+      const res = await lookup({ phone });
+
+      expect(res.status).toBe(200);
+      expect(idsOf(res)).toEqual(placedIds.get(phone)?.toReversed());
+      for (const order of res.body as OrderDetails[]) {
+        expect(order.phoneNumber).toBe(phone);
+      }
+      const body = JSON.stringify(res.body);
+      for (const other of PHONES.filter((candidate) => candidate !== phone)) {
+        // The ten digits after +1, found in the E.164 form and in any digits-only copy.
+        expect(body).not.toContain(other.slice(2));
+      }
+    });
+
+    it.each<{ name: string; query: Record<string, string> }>([
+      { name: 'no query string', query: {} },
+      { name: 'an empty phone', query: { phone: '' } },
+      { name: 'a phone of only spaces', query: { phone: '   ' } },
+      { name: 'other parameters but no phone', query: { phoneNumber: PHONE, status: 'placed' } },
+    ])(
+      'answers $name with 400 INVALID_PHONE_NUMBER rather than listing orders',
+      async ({ query }) => {
+        const res = await lookup(query);
+
+        expect(res.status).toBe(400);
+        expect(res.body).toEqual({
+          error: { code: 'INVALID_PHONE_NUMBER', message: expect.any(String) },
+        });
+      },
+    );
+
+    it.each(['212-555-014', '+44 20 7946 0958', '555-123-4567', '212-555-0142 x12', 'not a phone'])(
+      'answers the phone number %j with 400 INVALID_PHONE_NUMBER, without repeating it',
+      async (phone) => {
+        const res = await lookup({ phone });
+
+        expect(res.status).toBe(400);
+        expect(res.body).toEqual({
+          error: { code: 'INVALID_PHONE_NUMBER', message: expect.any(String) },
+        });
+        expect(res.body.error.message).not.toMatch(/\d{3}/);
+        expect(JSON.stringify(res.body)).not.toContain(phone);
+      },
+    );
+
+    it('answers a repeated phone parameter with 400 VALIDATION_ERROR, without repeating either number', async () => {
+      const res = await lookup(
+        `phone=${encodeURIComponent(PHONE)}&phone=${encodeURIComponent(OTHER_PHONE)}`,
+      );
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toEqual({
+        code: 'VALIDATION_ERROR',
+        message: 'Request validation failed',
+        details: { issues: [{ path: 'phone', message: expect.any(String) }] },
+      });
+      expect(JSON.stringify(res.body)).not.toMatch(/555/);
+    });
+
+    it("serves no customer route that reads one order by its id, such as another phone's", async () => {
+      const order = placeFor(OTHER_PHONE);
+
+      const res = await request(createApp({ db }))
+        .get(`/api/orders/${order.id}`)
+        .query({ phone: PHONE });
+
+      expect(res.status).toBe(404);
+      expect(res.body.error.code).toBe('NOT_FOUND');
+      expect(JSON.stringify(res.body)).not.toMatch(/555/);
     });
   });
 });
