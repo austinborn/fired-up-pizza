@@ -85,7 +85,7 @@ State key:
 | `src/pages/customer/CartPage.tsx`, `OrderConfirmationPage.tsx`, `src/api/orders.ts` | Cart, checkout, confirmation                       | Placeholder | `fup-oe9.6`                           |
 | `src/pages/customer/OrderTrackingPage.tsx`                                          | Order tracking with polling                        | Placeholder | `fup-bq3.2`                           |
 | `src/pages/staff/StaffOrderQueuePage.tsx`, `src/api/staff-orders.ts`                | Staff order queue                                  | Placeholder | `fup-b3a.2`                           |
-| `src/pages/staff/StaffMenuPage.tsx`, `src/api/staff-catalog.ts`                     | Staff menu management                              | Placeholder | `fup-y7n.2`                           |
+| `src/pages/staff/StaffMenuPage.tsx`, `src/api/staff-catalog.ts`                     | Menu management, with `src/components/staff/`      | Done        | `fup-y7n.2`                           |
 
 ## Request flows (target)
 
