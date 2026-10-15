@@ -49,7 +49,7 @@ State key:
 | `src/index.ts`                                              | Process entry: config, database, listen                 | Done    | `fup-be5`, `fup-qt5.1`   |
 | `src/app.ts`, `src/app-dependencies.ts`                     | `createApp({ db })`: JSON parsing, routers, 404, errors | Done    | `fup-be5`                |
 | `src/config.ts`                                             | `PORT`, `DATABASE_PATH`                                 | Done    | `fup-be5`                |
-| `src/db/connection.ts`                                      | `openDatabase()` with foreign keys and WAL              | Done    | `fup-be5`                |
+| `src/db/connection.ts`                                      | `openDatabase()` with foreign keys and WAL; health ping | Done    | `fup-be5`                |
 | `src/db/migrate.ts`, `src/db/migrations/`, `src/db/seed.ts` | Migration runner, schema, catalog seed (ADR 0002)       | Planned | `fup-qt5.1`              |
 | `src/test/database.ts`                                      | `createTestDatabase({ seed })` for tests                | Planned | `fup-qt5.1`              |
 | `src/http/errors.ts`                                        | `AppError`, code→status map, error and 404 handlers     | Done    | `fup-be5`                |

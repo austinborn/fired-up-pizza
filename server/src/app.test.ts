@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from './app';
 import { IN_MEMORY, openDatabase, type Db } from './db/connection';
 
@@ -11,6 +11,7 @@ describe('createApp', () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     db.close();
   });
 
@@ -19,6 +20,20 @@ describe('createApp', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ status: 'ok' });
+  });
+
+  it('fails health with a generic 500 once the database stops answering', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const app = createApp({ db });
+    db.close();
+
+    const res = await request(app).get('/api/health');
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({
+      error: { code: 'INTERNAL_ERROR', message: 'Something went wrong. Please try again.' },
+    });
+    expect(consoleError).toHaveBeenCalledOnce();
   });
 
   it('answers unknown API routes with the ADR 0006 error shape', async () => {

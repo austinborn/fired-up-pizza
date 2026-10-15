@@ -22,3 +22,14 @@ export function openDatabase(filename: string): Db {
   }
   return db;
 }
+
+/**
+ * Prepares the round trip behind GET /api/health. The returned check throws
+ * once the database stops answering, which the error handler turns into a 500.
+ */
+export function createDatabasePing(db: Db): () => void {
+  const ping = db.prepare('SELECT 1');
+  return () => {
+    ping.get();
+  };
+}

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { IN_MEMORY, openDatabase } from './connection';
+import { IN_MEMORY, createDatabasePing, openDatabase } from './connection';
 
 describe('openDatabase', () => {
   const tempDirs: string[] = [];
@@ -35,5 +35,16 @@ describe('openDatabase', () => {
     } finally {
       db.close();
     }
+  });
+});
+
+describe('createDatabasePing', () => {
+  it('passes while the database answers and throws once it is closed', () => {
+    const db = openDatabase(IN_MEMORY);
+    const ping = createDatabasePing(db);
+
+    expect(ping).not.toThrow();
+    db.close();
+    expect(ping).toThrow();
   });
 });
