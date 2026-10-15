@@ -31,16 +31,16 @@ State key:
 
 ### shared/
 
-| Path                       | Responsibility                                              | State   | Owner       |
-| -------------------------- | ----------------------------------------------------------- | ------- | ----------- |
-| `src/domain.ts`            | Domain entity types, `ORDER_STATUSES`, `isOrderStatus`      | Done    | `fup-be5`   |
-| `src/api-error.ts`         | Error codes and response shape, `isApiErrorBody` (ADR 0006) | Done    | `fup-be5`   |
-| `src/pricing.ts`           | Pricing formula and ordering limits (ADR 0003)              | Done    | `fup-qt5.2` |
-| `src/order-status.ts`      | Transition table and action labels (ADR 0004)               | Done    | `fup-qt5.3` |
-| `src/phone.ts`             | Phone normalize/format (ADR 0005)                           | Done    | `fup-qt5.4` |
-| `src/orders-api.ts`        | `PlaceOrderRequest`, `OrderDetails`                         | Done    | `fup-oe9.5` |
-| `src/staff-orders-api.ts`  | Staff status-update request types                           | Planned | `fup-b3a.1` |
-| `src/staff-catalog-api.ts` | Staff create/update request types                           | Done    | `fup-y7n.1` |
+| Path                       | Responsibility                                              | State | Owner       |
+| -------------------------- | ----------------------------------------------------------- | ----- | ----------- |
+| `src/domain.ts`            | Domain entity types, `ORDER_STATUSES`, `isOrderStatus`      | Done  | `fup-be5`   |
+| `src/api-error.ts`         | Error codes and response shape, `isApiErrorBody` (ADR 0006) | Done  | `fup-be5`   |
+| `src/pricing.ts`           | Pricing formula and ordering limits (ADR 0003)              | Done  | `fup-qt5.2` |
+| `src/order-status.ts`      | Transition table and action labels (ADR 0004)               | Done  | `fup-qt5.3` |
+| `src/phone.ts`             | Phone normalize/format (ADR 0005)                           | Done  | `fup-qt5.4` |
+| `src/orders-api.ts`        | `PlaceOrderRequest`, `OrderDetails`                         | Done  | `fup-oe9.5` |
+| `src/staff-orders-api.ts`  | Staff status-update request types                           | Done  | `fup-b3a.1` |
+| `src/staff-catalog-api.ts` | Staff create/update request types                           | Done  | `fup-y7n.1` |
 
 ### server/
 
@@ -65,7 +65,7 @@ State key:
 | `src/routes/catalog.ts`                                     | Customer catalog `GET`s                                 | Done    | `fup-oe9.1`              |
 | `src/routes/orders.ts`                                      | `POST /api/orders`; `GET /api/orders?phone=`            | Done    | `fup-oe9.5`, `fup-bq3.1` |
 | `src/routes/staff/index.ts`, `require-staff.ts`             | Staff mount point and access-control hook               | Done    | `fup-be5`                |
-| `src/routes/staff/orders.ts`                                | Staff queue and status transitions                      | Stub    | `fup-b3a.1`              |
+| `src/routes/staff/orders.ts`                                | Staff queue and status transitions                      | Done    | `fup-b3a.1`              |
 | `src/routes/staff/catalog.ts`                               | Menu item and topping management                        | Done    | `fup-y7n.1`              |
 | `src/mvp-flows.test.ts`                                     | End-to-end API flows per success criterion              | Planned | `fup-e6u.1`              |
 
