@@ -37,7 +37,7 @@ State key:
 | `src/api-error.ts`         | Error codes and response shape, `isApiErrorBody` (ADR 0006) | Done    | `fup-be5`   |
 | `src/pricing.ts`           | Pricing formula and ordering limits (ADR 0003)              | Planned | `fup-qt5.2` |
 | `src/order-status.ts`      | Transition table and action labels (ADR 0004)               | Planned | `fup-qt5.3` |
-| `src/phone.ts`             | Phone normalize/format (ADR 0005)                           | Planned | `fup-qt5.4` |
+| `src/phone.ts`             | Phone normalize/format (ADR 0005)                           | Done    | `fup-qt5.4` |
 | `src/orders-api.ts`        | `PlaceOrderRequest`, `OrderDetails`                         | Planned | `fup-oe9.5` |
 | `src/staff-orders-api.ts`  | Staff status-update request types                           | Planned | `fup-b3a.1` |
 | `src/staff-catalog-api.ts` | Staff create/update request types                           | Planned | `fup-y7n.1` |
@@ -60,7 +60,7 @@ State key:
 | `src/services/pricing.ts`                                   | `priceOrderItems` (server-side prices)                  | Planned | `fup-qt5.2`              |
 | `src/services/order-status.ts`                              | The only writer of order status                         | Planned | `fup-qt5.3`              |
 | `src/services/orders.ts`                                    | Place-order use case                                    | Planned | `fup-oe9.5`              |
-| `src/identity/index.ts`                                     | `resolveCustomerIdentity`, phone zod schema             | Planned | `fup-qt5.4`              |
+| `src/identity/index.ts`                                     | `resolveCustomerIdentity`, phone zod schema             | Done    | `fup-qt5.4`              |
 | `src/routes/health.ts`                                      | `GET /api/health`                                       | Done    | `fup-be5`                |
 | `src/routes/catalog.ts`                                     | Customer catalog `GET`s                                 | Stub    | `fup-oe9.1`              |
 | `src/routes/orders.ts`                                      | `POST /api/orders`; `GET /api/orders?phone=`            | Stub    | `fup-oe9.5`, `fup-bq3.1` |
