@@ -185,7 +185,9 @@ describe('0001_initial.sql', () => {
     }
   });
 
-  it('lets only the first status event omit from_status', () => {
+  it('accepts a NULL from_status on any event, but never a NULL to_status', () => {
+    // The schema does not limit NULL from_status to an order's first event.
+    // recordInitialStatus in server/src/services/order-status.ts enforces that.
     const event = 'order_status_events';
 
     expect(insertError(db, event, { from_status: null })).toBeUndefined();
