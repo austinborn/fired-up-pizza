@@ -2,7 +2,7 @@ import { apiErrorIssues } from '@fired-up-pizza/shared';
 import type { OrderDetails, PlaceOrderRequest } from '@fired-up-pizza/shared/orders-api';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from './http';
-import { placeOrder } from './orders';
+import { lookupOrders, placeOrder } from './orders';
 
 const request: PlaceOrderRequest = {
   phoneNumber: '(212) 555-0142',
@@ -101,4 +101,55 @@ describe('placeOrder', () => {
       expect(apiErrorIssues((error as ApiError).details)).toEqual(details?.issues ?? []);
     },
   );
+});
+
+describe('lookupOrders', () => {
+  it('GETs /api/orders with the number as the phone parameter and resolves with the orders', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([order]));
+    const { signal } = new AbortController();
+
+    await expect(lookupOrders('+12125550142', { signal })).resolves.toEqual([order]);
+    // The + is encoded: a bare + in a query string reads as a space.
+    expect(fetchSpy).toHaveBeenCalledExactlyOnceWith('/api/orders?phone=%2B12125550142', {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      signal,
+    });
+  });
+
+  it.each([
+    { typed: '(212) 555-0142', query: 'phone=%28212%29+555-0142' },
+    {
+      typed: '212-555-0142&phone=+13125550111',
+      query: 'phone=212-555-0142%26phone%3D%2B13125550111',
+    },
+  ])('sends $typed as one encoded phone parameter', async ({ typed, query }) => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(jsonResponse([]));
+
+    await expect(lookupOrders(typed)).resolves.toEqual([]);
+    expect(fetchSpy).toHaveBeenCalledExactlyOnceWith(`/api/orders?${query}`, expect.anything());
+  });
+
+  it('rejects INVALID_PHONE_NUMBER with an ApiError that keeps its code and message', async () => {
+    const message = 'Phone number must be a valid 10-digit US or Canadian number';
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({ error: { code: 'INVALID_PHONE_NUMBER', message } }, 400),
+    );
+
+    const error: unknown = await lookupOrders('555-123-4567').catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 400, code: 'INVALID_PHONE_NUMBER', message });
+  });
+
+  it('rejects an unreachable server with a NETWORK_ERROR whose message leaves the URL out', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Failed to fetch'));
+
+    const error: unknown = await lookupOrders('+12125550142').catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 0, code: 'NETWORK_ERROR' });
+    // The URL carries the phone number (ADR 0005 rule 5).
+    expect((error as ApiError).message).not.toMatch(/5550142|api\/orders/);
+  });
 });
