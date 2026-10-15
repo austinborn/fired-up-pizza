@@ -62,7 +62,7 @@ State key:
 | `src/services/orders.ts`                                    | Place-order use case                                    | Planned | `fup-oe9.5`              |
 | `src/identity/index.ts`                                     | `resolveCustomerIdentity`, phone zod schema             | Done    | `fup-qt5.4`              |
 | `src/routes/health.ts`                                      | `GET /api/health`                                       | Done    | `fup-be5`                |
-| `src/routes/catalog.ts`                                     | Customer catalog `GET`s                                 | Stub    | `fup-oe9.1`              |
+| `src/routes/catalog.ts`                                     | Customer catalog `GET`s                                 | Done    | `fup-oe9.1`              |
 | `src/routes/orders.ts`                                      | `POST /api/orders`; `GET /api/orders?phone=`            | Stub    | `fup-oe9.5`, `fup-bq3.1` |
 | `src/routes/staff/index.ts`, `require-staff.ts`             | Staff mount point and access-control hook               | Done    | `fup-be5`                |
 | `src/routes/staff/orders.ts`                                | Staff queue and status transitions                      | Stub    | `fup-b3a.1`              |
