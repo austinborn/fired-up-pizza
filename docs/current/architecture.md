@@ -1,8 +1,8 @@
 # Current architecture
 
-This page maps the codebase as it exists today and names the bead that owns each planned piece. Binding rules live in [`docs/decision-records/`](../decision-records/). Product requirements live in [`docs/PROJECT_MANIFEST.md`](../PROJECT_MANIFEST.md). Progress is tracked in the bead ledger (`gc bd list --parent <epic-id>`), not here.
+This page maps the codebase as it exists today and names the bead that built each piece. Binding rules live in [`docs/decision-records/`](../decision-records/). Product requirements live in [`docs/PROJECT_MANIFEST.md`](../PROJECT_MANIFEST.md). Progress is tracked in the bead ledger (`gc bd list --parent <epic-id>`), not here.
 
-**State:** scaffold (bead `fup-be5`). Tooling, the app shells, the error contract, and the database connection exist. All routers and routes are wired to stubs or placeholder pages that the feature beads fill in.
+**State:** MVP complete. Every module below is implemented and tested. `fup-e6u.2` checked a clean checkout: `npm install && npm run dev` creates, migrates, and seeds the database, and every quality gate passes.
 
 ## System overview
 
@@ -18,6 +18,7 @@ flowchart LR
 ```
 
 - `npm run dev` starts both processes. There are no other services, as required by the manifest Constraints.
+- At startup the API applies pending migrations and seeds an empty catalog before it listens (ADR 0002 rules 3 and 4).
 - Live views refresh by polling (ADR 0007). Nothing is pushed from the server.
 - `shared/` is a TypeScript-only package that both sides import for domain types and pure rules.
 
@@ -31,22 +32,23 @@ State key:
 
 ### shared/
 
-| Path                       | Responsibility                                              | State | Owner       |
-| -------------------------- | ----------------------------------------------------------- | ----- | ----------- |
-| `src/domain.ts`            | Domain entity types, `ORDER_STATUSES`, `isOrderStatus`      | Done  | `fup-be5`   |
-| `src/api-error.ts`         | Error codes and response shape, `isApiErrorBody` (ADR 0006) | Done  | `fup-be5`   |
-| `src/pricing.ts`           | Pricing formula and ordering limits (ADR 0003)              | Done  | `fup-qt5.2` |
-| `src/order-status.ts`      | Transition table and action labels (ADR 0004)               | Done  | `fup-qt5.3` |
-| `src/phone.ts`             | Phone normalize/format (ADR 0005)                           | Done  | `fup-qt5.4` |
-| `src/orders-api.ts`        | `PlaceOrderRequest`, `OrderDetails`                         | Done  | `fup-oe9.5` |
-| `src/staff-orders-api.ts`  | Staff status-update request types                           | Done  | `fup-b3a.1` |
-| `src/staff-catalog-api.ts` | Staff create/update request types                           | Done  | `fup-y7n.1` |
+| Path                       | Responsibility                                                             | State | Owner                          |
+| -------------------------- | -------------------------------------------------------------------------- | ----- | ------------------------------ |
+| `src/index.ts`             | Package root: re-exports `domain` and `api-error`                          | Done  | `fup-be5`                      |
+| `src/domain.ts`            | Domain entity types, `ORDER_STATUSES`, `isOrderStatus`                     | Done  | `fup-be5`                      |
+| `src/api-error.ts`         | Error codes, response shape, `isApiErrorBody`, `apiErrorIssues` (ADR 0006) | Done  | `fup-be5`; issues: `fup-oe9.6` |
+| `src/pricing.ts`           | Pricing formula and ordering limits (ADR 0003)                             | Done  | `fup-qt5.2`                    |
+| `src/order-status.ts`      | Transition table, live statuses, and action labels (ADR 0004)              | Done  | `fup-qt5.3`                    |
+| `src/phone.ts`             | Phone normalize/format (ADR 0005)                                          | Done  | `fup-qt5.4`                    |
+| `src/orders-api.ts`        | `PlaceOrderRequest`, `OrderDetails`, order limits                          | Done  | `fup-oe9.5`                    |
+| `src/staff-orders-api.ts`  | Staff queue query and status-update request types                          | Done  | `fup-b3a.1`                    |
+| `src/staff-catalog-api.ts` | Staff create/update request types and field limits                         | Done  | `fup-y7n.1`                    |
 
 ### server/
 
 | Path                                                        | Responsibility                                          | State | Owner                    |
 | ----------------------------------------------------------- | ------------------------------------------------------- | ----- | ------------------------ |
-| `src/index.ts`                                              | Process entry: config, database, listen                 | Done  | `fup-be5`, `fup-qt5.1`   |
+| `src/index.ts`                                              | Process entry: config, database, migrate, seed, listen  | Done  | `fup-be5`, `fup-qt5.1`   |
 | `src/app.ts`, `src/app-dependencies.ts`                     | `createApp({ db })`: JSON parsing, routers, 404, errors | Done  | `fup-be5`                |
 | `src/config.ts`                                             | `PORT`, `DATABASE_PATH`                                 | Done  | `fup-be5`                |
 | `src/db/connection.ts`                                      | `openDatabase()` with foreign keys and WAL; health ping | Done  | `fup-be5`                |
@@ -71,23 +73,26 @@ State key:
 
 ### client/
 
-| Path                                                                                | Responsibility                                     | State | Owner                                 |
-| ----------------------------------------------------------------------------------- | -------------------------------------------------- | ----- | ------------------------------------- |
-| `src/main.tsx`, `src/App.tsx`                                                       | Entry point and complete route table               | Done  | `fup-be5`                             |
-| `src/AppProviders.tsx`                                                              | All context providers                              | Done  | `fup-be5`; cart provider: `fup-oe9.3` |
-| `src/components/Layout.tsx`, `src/components/StaffLayout.tsx`                       | Customer and staff shells                          | Done  | `fup-be5`; cart count: `fup-oe9.3`    |
-| `src/components/PlaceholderPage.tsx`                                                | Temporary page body; delete when unused            | Done  | `fup-be5`; removal: `fup-e6u.2`       |
-| `src/test/setup.ts`, `src/test/render.tsx`                                          | jest-dom setup, `renderWithProviders`, `renderApp` | Done  | `fup-be5`                             |
-| `src/api/http.ts`, `src/hooks/`, view-state components, `src/lib/`                  | HTTP client, `useAsync`, `usePolling`, formatting  | Done  | `fup-qt5.5`                           |
-| `src/pages/customer/MenuPage.tsx`, `src/api/catalog.ts`                             | Menu, with `src/components/MenuItemCard.tsx`       | Done  | `fup-oe9.2`                           |
-| `src/context/CartContext.tsx`                                                       | Cart state with persistence                        | Done  | `fup-oe9.3`                           |
-| `src/pages/customer/PizzaBuilderPage.tsx`                                           | Pizza builder, with `src/components/builder/`      | Done  | `fup-oe9.4`                           |
-| `src/pages/customer/CartPage.tsx`, `OrderConfirmationPage.tsx`, `src/api/orders.ts` | Cart, checkout, confirmation                       | Done  | `fup-oe9.6`                           |
-| `src/pages/customer/OrderTrackingPage.tsx`                                          | Order tracking, with `OrderStatusProgress.tsx`     | Done  | `fup-bq3.2`                           |
-| `src/pages/staff/StaffOrderQueuePage.tsx`, `src/api/staff-orders.ts`                | Staff order queue, with `src/components/staff/`    | Done  | `fup-b3a.2`                           |
-| `src/pages/staff/StaffMenuPage.tsx`, `src/api/staff-catalog.ts`                     | Menu management, with `src/components/staff/`      | Done  | `fup-y7n.2`                           |
+| Path                                                                                 | Responsibility                                      | State | Owner                                 |
+| ------------------------------------------------------------------------------------ | --------------------------------------------------- | ----- | ------------------------------------- |
+| `src/main.tsx`, `src/App.tsx`, `src/router-future-flags.ts`                          | Entry point, complete route table, router flags     | Done  | `fup-be5`                             |
+| `src/index.css`                                                                      | The only stylesheet: the Tailwind entry (ADR 0007)  | Done  | `fup-be5`                             |
+| `src/AppProviders.tsx`                                                               | All context providers                               | Done  | `fup-be5`; cart provider: `fup-oe9.3` |
+| `src/components/Layout.tsx`, `src/components/StaffLayout.tsx`                        | Customer and staff shells, with `nav-link-class.ts` | Done  | `fup-be5`; cart count: `fup-oe9.3`    |
+| `src/pages/NotFoundPage.tsx`                                                         | Page for unknown paths                              | Done  | `fup-be5`                             |
+| `src/test/setup.ts`, `src/test/render.tsx`                                           | jest-dom setup, `renderWithProviders`, `renderApp`  | Done  | `fup-be5`                             |
+| `src/api/http.ts`, `src/hooks/`, view-state components, `src/lib/`                   | HTTP client, `useAsync`, `usePolling`, formatting   | Done  | `fup-qt5.5`                           |
+| `src/pages/customer/MenuPage.tsx`, `src/api/catalog.ts`                              | Menu, with `src/components/MenuItemCard.tsx`        | Done  | `fup-oe9.2`                           |
+| `src/context/CartContext.tsx`                                                        | Cart state with persistence                         | Done  | `fup-oe9.3`                           |
+| `src/pages/customer/PizzaBuilderPage.tsx`                                            | Pizza builder, with `src/components/builder/`       | Done  | `fup-oe9.4`                           |
+| `src/pages/customer/CartPage.tsx`, `OrderConfirmationPage.tsx`, `src/api/orders.ts`  | Cart, checkout, confirmation                        | Done  | `fup-oe9.6`                           |
+| `src/pages/customer/OrderTrackingPage.tsx`, `src/components/OrderStatusProgress.tsx` | Order tracking with a status indicator              | Done  | `fup-bq3.2`                           |
+| `src/pages/staff/StaffOrderQueuePage.tsx`, `src/api/staff-orders.ts`                 | Staff order queue, with `src/components/staff/`     | Done  | `fup-b3a.2`                           |
+| `src/pages/staff/StaffMenuPage.tsx`, `src/api/staff-catalog.ts`                      | Menu management, with `src/components/staff/`       | Done  | `fup-y7n.2`                           |
 
-## Request flows (target)
+The view-state components are `LoadingState`, `EmptyState`, `ErrorState`, and `StaleDataBanner` in `src/components/`. `src/lib/` holds money and time formatting.
+
+## Request flows
 
 - **Customer ordering:**
   1. The menu and builder read the catalog `GET` endpoints.
@@ -95,12 +100,12 @@ State key:
   3. Checkout sends `POST /api/orders`. The server resolves the phone through `identity/`, prices items through `services/pricing.ts`, then inserts the order, items, topping snapshots, and the initial status event in one transaction.
   4. The confirmation shows the server's totals.
 - **Customer tracking:** `/track` polls `GET /api/orders?phone=…` every 10 seconds. The response holds that phone's orders only.
-- **Staff queue:** `/staff/orders` polls `GET /api/staff/orders`. Status buttons call `PATCH /api/staff/orders/:id/status`, which goes through `services/order-status.ts`: a conditional update plus an event row, with 409 on conflict.
+- **Staff queue:** `/staff/orders` polls `GET /api/staff/orders` every 10 seconds. Status buttons call `PATCH /api/staff/orders/:id/status`, which goes through `services/order-status.ts`: a conditional update plus an event row, with 409 on conflict.
 - **Staff menu:** `/staff/menu` uses the `/api/staff/menu-items` and `/api/staff/toppings` endpoints. Hiding sets `available = false`.
 
 ## Work breakdown
 
-Planned under `fup-be5`. Every task depends, directly or through earlier tasks, on `fup-be5`, so nothing starts until the scaffold merges.
+Planned under `fup-be5`. Every task depended, directly or through earlier tasks, on `fup-be5`, and every task is now complete.
 
 | Epic      | Scope                   | Tasks                                                                                                                        |
 | --------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -123,5 +128,6 @@ Dependency waves:
 ## Differences from the manifest's proposed structure
 
 - Decision records live in `docs/decision-records/`, not `docs/adr/`. That is where this rig's architect reads them (ADR 0000).
-- The server adds `app.ts`, `config.ts`, `http/`, `identity/`, and `repositories/`. The client adds `AppProviders.tsx`, `lib/`, and `test/`. ADR 0001 records why.
+- The server adds `app.ts`, `config.ts`, `http/`, `identity/`, and `repositories/`, and the client adds `App.tsx`, `AppProviders.tsx`, `lib/`, and `test/`. ADR 0001 rules 5 and 6 set out this layout. Beyond those rules, the server has `app-dependencies.ts` (the `{ db }` that routers receive, ADR 0006 rule 7) and `test/` (the test database helper), and the client has `router-future-flags.ts`, which `main.tsx` and the test render helper share.
+- `context/` holds only the cart. There is no staff session, because staff access control is not built yet; it will go in `requireStaff` (ADR 0006 rule 3).
 - The six-agent pipeline folders (`work-packages/`, `design/`, `review-reports/`, `release-gates/`) are not created. This rig runs the Gas City polecat → refinery → architect flow: beads carry the plan, the architect's verdict is written onto each bead, and branches are named by the factory (`polecat/<bead-id>`). Create those folders if the six-agent pipeline is adopted.
