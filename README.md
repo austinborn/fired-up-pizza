@@ -6,7 +6,7 @@ Online ordering and order management for a neighborhood pizza restaurant. Custom
 
 ## Quick start
 
-Requires Node.js 22.12 or newer (24 recommended; see `.nvmrc`).
+Requires Node.js 22.22.2+ on 22.x, 24.15+ on 24.x, or 26+: the `engines` range in `package.json`. 24 is recommended (see `.nvmrc`).
 
 ```bash
 npm install

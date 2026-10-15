@@ -15,7 +15,7 @@ Read before changing code:
 npm install   # needed once in a fresh worktree
 ```
 
-Node 22.12 or newer. `.npmrc` disables dependency install scripts on purpose (ADR 0001 rule 9). Do not approve or re-enable them.
+Node 22.22.2+ on 22.x, 24.15+ on 24.x, or 26+ (`engines` in `package.json`; `.nvmrc` pins 24). `.npmrc` disables dependency install scripts on purpose (ADR 0001 rule 9). Do not approve or re-enable them.
 
 ## Quality Gates
 
