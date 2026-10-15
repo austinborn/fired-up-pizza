@@ -2,7 +2,8 @@
 // server/src/routes/orders.ts and the client's checkout, confirmation, and
 // tracking pages. The staff order endpoints return OrderDetails too.
 //
-//   POST /api/orders   PlaceOrderRequest -> 201 OrderDetails
+//   POST /api/orders              PlaceOrderRequest -> 201 OrderDetails
+//   GET  /api/orders?phone=...    -> OrderDetails[], that phone's newest orders
 //
 // A request names catalog rows by id and never carries a price. The server
 // strips any price fields, prices every item from the current catalog rows, and
@@ -26,6 +27,13 @@
 // VALIDATION_ERROR and ITEM_UNAVAILABLE list their problems in
 // `details.issues: [{ path, message }]`, with paths into the request body such
 // as `items.0.toppingIds.1`.
+//
+// The lookup takes the phone number in any format that
+// @fired-up-pizza/shared/phone accepts. It returns the orders placed with that
+// number and no others (ADR 0005 rule 4): the newest 20, newest first, in every
+// status, each with its status history. A number with no orders gets an empty
+// array. A missing or unaccepted number gets 400 INVALID_PHONE_NUMBER, and a
+// repeated `phone` parameter gets 400 VALIDATION_ERROR.
 
 import type { Order, OrderItem, OrderItemTopping, OrderStatusEvent } from './domain';
 
